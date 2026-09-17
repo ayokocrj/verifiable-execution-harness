@@ -1,0 +1,4 @@
+# Verifiable Autonomy Layer (VAL) Harness
+# Zero external runtime dependencies required (standard library).
+# Optional development dependencies:
+pytest>=7.4.0

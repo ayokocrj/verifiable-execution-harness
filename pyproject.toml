@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "verifiable-execution-harness"
+version = "0.1.0"
+authors = [
+  { name="Roland-Caryl Obam", email="roland-caryl.obam@stx.ox.ac.uk" },
+]
+description = "Evaluation & runtime harness for verifiable agent execution, append-only traces (VETs), and deterministic state rollback. Inspired by ECC."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
