@@ -1,0 +1,41 @@
+customer_id,company,city,plan,mrr,created_at,payment_method,status,dispute_open,contacts_7d
+C001,Summit Roofing #01,Phoenix,growth,149,2025-12-04,mastercard,active,0,0
+C002,Blue Ridge Cleaning #02,Austin,pro,399,2026-06-20,visa,active,0,0
+C003,Summit Electrical #03,Columbus,growth,149,2025-12-07,ach,active,0,0
+C004,Summit Landscaping #04,Columbus,growth,149,2025-08-06,amex,active,0,0
+C005,Harbor HVAC #05,Denver,starter,49,2025-06-26,visa,active,0,0
+C006,Harbor Roofing #06,Austin,growth,149,2024-07-03,ach,active,0,0
+C007,Prairie HVAC #07,Raleigh,growth,149,2024-10-15,amex,active,0,0
+C008,Blue Ridge Plumbing #08,Phoenix,growth,149,2024-05-20,amex,active,0,0
+C009,Evergreen HVAC #09,Columbus,enterprise,899,2025-10-09,ach,active,0,0
+C010,Harbor Landscaping #10,Nashville,growth,149,2025-07-22,mastercard,active,0,0
+C011,Blue Ridge Landscaping #11,Phoenix,enterprise,899,2026-02-03,ach,active,0,0
+C012,Evergreen Pest Control #12,Austin,growth,149,2025-11-28,visa,active,0,0
+C013,Prairie Roofing #13,Denver,pro,399,2025-12-16,amex,active,0,0
+C014,Canyon Cleaning #14,Boise,starter,49,2026-02-24,amex,active,0,0
+C015,Copper Cleaning #15,Columbus,starter,49,2025-07-15,mastercard,active,0,0
+C016,Lone Star Pool Service #16,Denver,enterprise,899,2024-06-07,visa,active,0,0
+C017,Lone Star Landscaping #17,Columbus,pro,399,2024-11-17,visa,active,0,0
+C018,Canyon Roofing #18,Austin,growth,149,2024-08-23,visa,active,0,0
+C019,Copper Pest Control #19,Denver,growth,149,2025-09-23,ach,active,1,0
+C020,Summit Roofing #20,Tampa,starter,49,2025-02-16,visa,active,0,0
+C021,Copper Electrical #21,Tampa,pro,399,2025-07-03,mastercard,active,0,0
+C022,Summit Pest Control #22,Boise,growth,149,2026-07-01,visa,active,0,3
+C023,Copper Electrical #23,Austin,enterprise,899,2025-11-16,visa,active,0,0
+C024,Canyon HVAC #24,Tampa,starter,49,2026-03-11,ach,active,0,0
+C025,Lone Star Roofing #25,Columbus,enterprise,899,2025-12-16,mastercard,active,0,0
+C026,Prairie Pest Control #26,Boise,pro,399,2025-02-06,ach,active,0,0
+C027,Evergreen HVAC #27,Nashville,starter,49,2026-06-29,mastercard,active,0,0
+C028,Summit HVAC #28,Austin,pro,399,2025-11-28,visa,active,0,0
+C029,Harbor HVAC #29,Phoenix,enterprise,899,2025-10-08,ach,active,0,0
+C030,Lone Star Pool Service #30,Phoenix,starter,49,2024-05-08,ach,active,0,0
+C031,Evergreen HVAC #31,Denver,pro,399,2024-09-14,ach,active,0,0
+C032,Prairie Pool Service #32,Austin,growth,149,2024-08-30,visa,active,0,0
+C033,Harbor HVAC #33,Phoenix,starter,49,2026-01-05,mastercard,active,0,0
+C034,Lone Star Cleaning #34,Tampa,growth,149,2025-10-08,ach,active,0,0
+C035,Blue Ridge Pool Service #35,Denver,starter,49,2026-05-30,visa,active,0,0
+C036,Evergreen Landscaping #36,Columbus,enterprise,899,2025-03-10,ach,active,0,0
+C037,Prairie Plumbing #37,Tampa,starter,49,2025-06-27,visa,active,0,0
+C038,Copper Pool Service #38,Raleigh,enterprise,899,2025-05-13,ach,active,0,0
+C039,Copper Electrical #39,Austin,starter,49,2024-12-04,visa,active,0,0
+C040,Summit Plumbing #40,Boise,pro,399,2025-02-21,mastercard,active,0,0

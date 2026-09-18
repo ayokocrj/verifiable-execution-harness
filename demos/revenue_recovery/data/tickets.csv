@@ -1,0 +1,26 @@
+ticket_id,customer_id,opened_at,status,subject
+T001,C005,2026-09-10,open,Payment question
+T002,C012,2026-09-09,open,Scheduling bug
+T003,C018,2026-09-09,open,Payment question
+T004,C025,2026-09-09,open,Scheduling bug
+T005,C031,2026-09-04,open,Invoice sync issue
+T006,C036,2026-09-01,open,Scheduling bug
+T007,C038,2026-09-14,open,Invoice sync issue
+T008,C027,2026-09-13,closed,Payment question
+T009,C021,2026-09-16,open,Login problem
+T010,C016,2026-09-16,closed,Login problem
+T011,C030,2026-09-16,closed,Invoice sync issue
+T012,C001,2026-09-15,closed,Payment question
+T013,C007,2026-09-18,closed,Payment question
+T014,C017,2026-09-17,closed,Invoice sync issue
+T015,C016,2026-09-16,open,Feature request
+T016,C035,2026-09-13,closed,Payment question
+T017,C001,2026-09-13,closed,Login problem
+T018,C007,2026-09-17,open,Invoice sync issue
+T019,C036,2026-09-17,open,Payment question
+T020,C014,2026-09-13,closed,Login problem
+T021,C033,2026-09-15,open,Invoice sync issue
+T022,C006,2026-09-13,closed,Login problem
+T023,C003,2026-09-18,closed,Scheduling bug
+T024,C017,2026-09-17,closed,Payment question
+T025,C028,2026-09-14,open,Invoice sync issue
