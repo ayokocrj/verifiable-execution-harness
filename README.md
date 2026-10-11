@@ -69,18 +69,25 @@ This repository introduces an end-to-end framework combining **formal systems ve
 
 ---
 
-## 📊 Benchmark Results (`ledger-invariant-bench`)
+---
 
-Evaluated on 1,000 deterministic traces across financial treasury reconciliations and industrial power switching, comparing standard verification methods against our compact decision architecture:
+## 🔬 Demonstration Runs (In-Memory Simulation)
 
-| Verifier Architecture | Model Size | Invariant Accuracy | Adversarial Recall | Inference Latency | Data Exfiltration Risk | Tamper Audit |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Random Guess Baseline** | — | 33.8% | 38.6% | <0.1 ms | None | ❌ None |
-| **Static Heuristic Rules** | 0 | 68.8% | 47.9% | <0.1 ms | None | ❌ None |
-| **Frontier LLM (Zero-Shot)** | 70B+ | 82.0% | 80.9% | 1,250.0 ms | **High (Cloud API)** | ❌ None |
-| **Ledger-Invariant (Ours)** | **35M** | **94.2%** | **85.1%** | **0.03 ms** | **Zero (Air-Gapped)** | **✅ SHA-256 Chained** |
+The harness is validated using deterministic in-memory simulations across two operational domains:
 
-> **Key takeaway:** Our 35M-parameter decision architecture outperforms zero-shot frontier LLMs on adversarial invariant recall while running **40,000x faster** and completely eliminating third-party data leakage.
+1. **Financial Treasury Settlement:**
+   * **Invariants:** Double-entry zero-sum conservation across accounts, $1.0M minimum liquidity covenant.
+   * **Results:** 4 actions executed; 2 invariant breaches injected (`EXCESSIVE_ESCROW_DRAIN`, `INJECT_UNBALANCED_CREDIT`); **2 automated rollbacks executed (<0.07 ms)**; **0 state drift**.
+
+2. **SCADA Industrial Substation:**
+   * **Invariants:** Voltage stability envelope `[90.0, 130.0] kV`, current surge limit `800.0 A`.
+   * **Results:** 5 actions executed; 2 invariant breaches injected (`INJECT_OVERVOLTAGE_SPIKE`, `FEEDER_OVERCURRENT_SURGE`); **2 automated rollbacks executed**; **0 state drift**.
+
+3. **Append-Only Ledger Audit:**
+   * Every state mutation commits a SHA-256 chained record: $\text{Hash}_N = \text{SHA256}(\text{Payload} + \text{Hash}_{N-1})$.
+   * Tamper verification detects any retro-active parameter modification with 100% precision.
+
+> **Target Architecture under development:** `ledger-invariant-35m` (compact 35M PyTorch transformer evaluating `(State, Action, Criteria)` triplets into `ALLOW`, `BLOCK`, `ROLLBACK` to replace cloud API verification in air-gapped environments). Full empirical benchmark evaluation across 50,000 synthetic traces is currently underway.
 
 ---
 
@@ -160,13 +167,12 @@ python run_harness.py
 
 ---
 
-## 🔬 Research & Founder Background
+## 🔬 Research & Author Background
 
-* **Author:** Roland-Caryl Junior Obam Ngo'O
-* **Academic Affiliation:** University of Oxford, Kellogg College | Department of Computer Science & Saïd Business School (*MSc in Artificial Intelligence for Business*).
-* **Prior Degree:** Undergraduate Advanced Diploma in IT Systems Analysis and Design, University of Oxford (Awarded with **Distinction**, 72.75% average).
-* **Research Focus:** Deterministic symbolic invariants, local decision verifiers, and cryptographic auditability for autonomous agents in mission-critical industries.
-* **Open Source Commitment:** Open-weight model weights and datasets will be released on Hugging Face under the MIT License.
+* **Author:** Roland-Caryl Obam
+* **Academic Background:** Undergraduate Advanced Diploma in IT Systems Analysis and Design, University of Oxford (Awarded with **Distinction**, 72.75% average, September 2026). Incoming MSc in Artificial Intelligence for Business, Kellogg College (Department of Computer Science & Saïd Business School).
+* **Research Focus:** Deterministic symbolic invariants, local decision verifiers, and cryptographic auditability for autonomous agents in mission-critical workflows.
+* **Open Source Commitment:** Open-source harness (MIT) with planned open-weight model weights and datasets under the MIT License.
 
 ---
 
