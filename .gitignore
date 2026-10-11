@@ -11,3 +11,16 @@ env/
 
 demos/revenue_recovery/ledger.json
 demos/revenue_recovery/data/
+*.webm
+*.mp4
+*.mp3
+*.wav
+*.zip
+*.png
+voice_build/
+investor_machine_video/
+profounders_video/
+discovery_coder/
+data/*.jsonl
+checkpoints/
+
