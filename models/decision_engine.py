@@ -103,37 +103,9 @@ class DecisionEngine:
         invariants: List[str]
     ) -> Tuple[str, int, float]:
         """
-        Deterministic mathematical invariant evaluator for zero-shot testing and ground-truth validation.
+        Deterministic rule oracle shared with the synthetic generator (synthetic_data.rules).
+        Confidence is 1.0 by construction: the oracle is exact on its own rules.
         """
-        amount = params.get("amount", 0.0)
-
-        # 1. Negative amounts or arbitrary mutations outside double-entry balance -> BLOCK
-        if amount < 0 or "arbitrary_mutation" in params:
-            return "BLOCK", 1, 0.999
-
-        # 2. Financial treasury domain checks
-        if "source_account" in params and "dest_account" in params:
-            src = params["source_account"]
-            dst = params["dest_account"]
-
-            if src in state:
-                # Overdraft or minimum covenant breach
-                min_liquidity = 1_000_000.0 if "operating_reserve" in src else 0.0
-                if state[src] - amount < min_liquidity:
-                    return "BLOCK", 1, 0.985
-                return "ALLOW", 0, 0.992
-
-        # 3. SCADA substation domain checks
-        if "voltage" in params:
-            v = params["voltage"]
-            if v < 90.0 or v > 130.0:
-                return "BLOCK", 1, 0.998
-            return "ALLOW", 0, 0.995
-
-        if "current" in params:
-            c = params["current"]
-            if c > 800.0 or c < 0.0:
-                return "BLOCK", 1, 0.998
-            return "ALLOW", 0, 0.995
-
-        return "ALLOW", 0, 0.900
+        from synthetic_data.rules import oracle_decision, LABEL_TO_CLASS
+        label, _reason = oracle_decision(state, action, params)
+        return label, LABEL_TO_CLASS[label], 1.0

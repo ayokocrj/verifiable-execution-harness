@@ -18,7 +18,8 @@ def main():
     parser.add_argument("--samples", type=int, default=50_000, help="Total samples to generate.")
     parser.add_argument("--out", type=str, default="data/synthetic_traces_50k.jsonl", help="Output JSONL path.")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
-    parser.add_argument("--adversarial_ratio", type=float, default=0.35)
+    parser.add_argument("--adversarial_ratio", type=float, default=0.5,
+                        help="Share of violating samples. 0.5 gives balanced labels.")
     parser.add_argument("--include_rollback", action="store_true",
                         help="Add the post-action ROLLBACK class (v0.2 split). Off by default: v0.1 is ALLOW/BLOCK.")
     args = parser.parse_args()

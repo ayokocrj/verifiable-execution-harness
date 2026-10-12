@@ -14,6 +14,7 @@ Every number reported here is measured on the generated test set. Nothing is sim
 
 import time
 import random
+from collections import Counter
 from typing import Callable, Dict, Any, List, Optional, Tuple
 from synthetic_data.generator import SyntheticTraceGenerator, TraceSample
 from models.decision_engine import DecisionEngine
@@ -25,6 +26,21 @@ class BaselineEvaluator:
     @staticmethod
     def random_baseline(sample: TraceSample, rng: random.Random, labels: List[str] = LABELS) -> str:
         return rng.choice(labels)
+
+    @staticmethod
+    def fit_majority(train: List[TraceSample]) -> str:
+        return Counter(s.label for s in train).most_common(1)[0][0]
+
+    @staticmethod
+    def fit_action_name_lookup(train: List[TraceSample], fallback: str) -> Dict[str, str]:
+        """
+        Leakage probe: predicts the label from the action name alone.
+        On a sound dataset this must not beat the majority class by more than a few points.
+        """
+        per_action: Dict[str, Counter] = {}
+        for s in train:
+            per_action.setdefault(s.action_name, Counter())[s.label] += 1
+        return {a: c.most_common(1)[0][0] for a, c in per_action.items()}
 
     @staticmethod
     def heuristic_rule_baseline(sample: TraceSample) -> str:
@@ -54,6 +70,11 @@ class BenchmarkSuite:
             total_samples=test_samples, adversarial_ratio=0.4, include_rollback=include_rollback
         )
         self.labels = LABELS if include_rollback else LABELS[:2]
+        # Fitted baselines are trained on a disjoint split (different seed), never on the test set.
+        fit_gen = SyntheticTraceGenerator(seed=seed + 1)
+        fit_split = fit_gen.generate_dataset(total_samples=5_000, adversarial_ratio=0.4, include_rollback=include_rollback)
+        self.majority_label = BaselineEvaluator.fit_majority(fit_split)
+        self.action_lookup = BaselineEvaluator.fit_action_name_lookup(fit_split, self.majority_label)
         self.engine = DecisionEngine(model_path=model_path)
         self.llm_zero_shot_fn = llm_zero_shot_fn
         self.rng = random.Random(seed)
@@ -62,6 +83,8 @@ class BenchmarkSuite:
         """(display name, predictor, is_learned_model)"""
         baselines: List[Tuple[str, Callable[[TraceSample], str], bool]] = [
             ("Random Baseline", lambda s: BaselineEvaluator.random_baseline(s, self.rng, self.labels), False),
+            ("Majority Class", lambda s: self.majority_label, False),
+            ("Action-Name Lookup (leakage probe)", lambda s: self.action_lookup.get(s.action_name, self.majority_label), False),
             ("Heuristic Rules", BaselineEvaluator.heuristic_rule_baseline, False),
         ]
         if self.llm_zero_shot_fn is not None:
