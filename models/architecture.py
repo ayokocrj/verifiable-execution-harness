@@ -45,13 +45,36 @@ class LedgerInvariantConfig:
         self.dropout = dropout
         self.num_classes = num_classes
 
-    @classmethod
-    def get_10m_config(cls) -> "LedgerInvariantConfig":
-        return cls(d_model=384, n_heads=6, n_layers=6, d_ff=1536)
+    FIELDS = ("vocab_size", "max_seq_len", "d_model", "n_heads", "n_layers", "d_ff", "dropout", "num_classes")
 
     @classmethod
-    def get_35m_config(cls) -> "LedgerInvariantConfig":
-        return cls(d_model=512, n_heads=8, n_layers=10, d_ff=2048)
+    def get_10m_config(cls, num_classes: int = 2) -> "LedgerInvariantConfig":
+        """v0.1: binary pre-execution gatekeeper (ALLOW / BLOCK) by default.
+        Generated traces are at most ~70 tokens, so a 128-token window keeps padding under 50%."""
+        return cls(d_model=384, n_heads=6, n_layers=6, d_ff=1536, max_seq_len=128, num_classes=num_classes)
+
+    @classmethod
+    def get_35m_config(cls, num_classes: int = 3) -> "LedgerInvariantConfig":
+        """v0.2: adds the post-action ROLLBACK class."""
+        return cls(d_model=512, n_heads=8, n_layers=10, d_ff=2048, num_classes=num_classes)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: getattr(self, k) for k in self.FIELDS}
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "LedgerInvariantConfig":
+        return cls(**{k: d[k] for k in cls.FIELDS if k in d})
+
+    def save(self, path: str) -> None:
+        import json
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, indent=2)
+
+    @classmethod
+    def load(cls, path: str) -> "LedgerInvariantConfig":
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            return cls.from_dict(json.load(f))
 
     def count_parameters(self) -> int:
         """Mathematical estimation of parameter count."""

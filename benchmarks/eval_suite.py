@@ -1,23 +1,34 @@
 # -*- coding: utf-8 -*-
 """
 Ledger-Invariant Benchmark Evaluation Suite (ledger-invariant-bench).
-Evaluates 4 baselines against the deterministic execution benchmark.
+
+Every number reported here is measured on the generated test set. Nothing is simulated:
+  - No baseline is allowed to read the ground-truth label.
+  - Latencies are wall-clock measurements, never constants.
+  - A zero-shot LLM baseline is only reported when a real callable is injected via
+    `llm_zero_shot_fn`; otherwise that row is absent (not faked).
+  - The "Ledger-Invariant" row is only labelled as the learned model when neural weights
+    are actually loaded. Without weights the engine falls back to the symbolic rule oracle,
+    and the row is labelled as such (it is the upper bound the model is trained to approximate).
 """
 
 import time
 import random
-from typing import List, Dict, Any
+from typing import Callable, Dict, Any, List, Optional, Tuple
 from synthetic_data.generator import SyntheticTraceGenerator, TraceSample
 from models.decision_engine import DecisionEngine
 
+LABELS = ["ALLOW", "BLOCK", "ROLLBACK"]
+
+
 class BaselineEvaluator:
     @staticmethod
-    def random_baseline(sample: TraceSample) -> str:
-        return random.choice(["ALLOW", "BLOCK", "ROLLBACK"])
+    def random_baseline(sample: TraceSample, rng: random.Random, labels: List[str] = LABELS) -> str:
+        return rng.choice(labels)
 
     @staticmethod
     def heuristic_rule_baseline(sample: TraceSample) -> str:
-        # Static Regex / Rule heuristic without contextual state tracking
+        # Static threshold heuristic without contextual state tracking
         params = sample.action_params
         if "amount" in params and params["amount"] > 3_000_000.0:
             return "BLOCK"
@@ -27,32 +38,46 @@ class BaselineEvaluator:
             return "BLOCK"
         return "ALLOW"
 
-    @staticmethod
-    def llm_simulation_baseline(sample: TraceSample) -> str:
-        # Simulates frontier LLM zero-shot prompt evaluation (stochastic drift)
-        true_label = sample.label
-        # Simulated 83% accuracy with failure modes on subtle balance conservation
-        if random.random() < 0.83:
-            return true_label
-        return "ALLOW" if true_label == "BLOCK" else "BLOCK"
 
 class BenchmarkSuite:
-    def __init__(self, test_samples: int = 1_000):
-        gen = SyntheticTraceGenerator(seed=1337)
-        self.samples = gen.generate_dataset(total_samples=test_samples, adversarial_ratio=0.4)
-        self.engine = DecisionEngine()
+    def __init__(
+        self,
+        test_samples: int = 1_000,
+        model_path: Optional[str] = None,
+        llm_zero_shot_fn: Optional[Callable[[TraceSample], str]] = None,
+        seed: int = 1337,
+        include_rollback: bool = False,
+    ):
+        """include_rollback=False evaluates the v0.1 binary split; True evaluates the v0.2 split."""
+        gen = SyntheticTraceGenerator(seed=seed)
+        self.samples = gen.generate_dataset(
+            total_samples=test_samples, adversarial_ratio=0.4, include_rollback=include_rollback
+        )
+        self.labels = LABELS if include_rollback else LABELS[:2]
+        self.engine = DecisionEngine(model_path=model_path)
+        self.llm_zero_shot_fn = llm_zero_shot_fn
+        self.rng = random.Random(seed)
+
+    def _baselines(self) -> List[Tuple[str, Callable[[TraceSample], str], bool]]:
+        """(display name, predictor, is_learned_model)"""
+        baselines: List[Tuple[str, Callable[[TraceSample], str], bool]] = [
+            ("Random Baseline", lambda s: BaselineEvaluator.random_baseline(s, self.rng, self.labels), False),
+            ("Heuristic Rules", BaselineEvaluator.heuristic_rule_baseline, False),
+        ]
+        if self.llm_zero_shot_fn is not None:
+            baselines.append(("LLM Zero-Shot (measured)", self.llm_zero_shot_fn, False))
+
+        engine_fn = lambda s: self.engine.predict(s.state, s.action_name, s.action_params, s.invariants).decision
+        if self.engine.has_weights:
+            baselines.append(("Ledger-Invariant (Ours, neural)", engine_fn, True))
+        else:
+            baselines.append(("Symbolic Oracle (rule upper bound, no weights loaded)", engine_fn, False))
+        return baselines
 
     def run_evaluation(self) -> Dict[str, Dict[str, Any]]:
         results = {}
 
-        baselines = [
-            ("Random Baseline", BaselineEvaluator.random_baseline, 0.2),
-            ("Heuristic Rules", BaselineEvaluator.heuristic_rule_baseline, 1.1),
-            ("LLM Zero-Shot (Simulated)", BaselineEvaluator.llm_simulation_baseline, 1250.0),
-            ("Ledger-Invariant (Ours)", lambda s: self.engine.predict(s.state, s.action_name, s.action_params, s.invariants).decision, 3.4),
-        ]
-
-        for name, eval_fn, baseline_lat in baselines:
+        for name, eval_fn, is_learned in self._baselines():
             correct = 0
             adversarial_total = 0
             adversarial_caught = 0
@@ -67,8 +92,8 @@ class BenchmarkSuite:
                     if pred == s.label:
                         adversarial_caught += 1
 
-            total_time = (time.perf_counter() - t0) * 1000.0
-            avg_latency = baseline_lat if "LLM" in name else (total_time / len(self.samples))
+            total_time_ms = (time.perf_counter() - t0) * 1000.0
+            avg_latency = total_time_ms / max(1, len(self.samples))
 
             acc = correct / len(self.samples)
             adv_recall = adversarial_caught / max(1, adversarial_total)
@@ -76,19 +101,20 @@ class BenchmarkSuite:
             results[name] = {
                 "accuracy": round(acc * 100.0, 2),
                 "adversarial_recall": round(adv_recall * 100.0, 2),
-                "latency_ms": round(avg_latency, 2),
-                "tamper_proof": True if "Ours" in name else False,
+                "latency_ms": round(avg_latency, 3),
+                "learned_model": is_learned,
+                "n_samples": len(self.samples),
             }
 
         return results
 
     def print_markdown_table(self, results: Dict[str, Dict[str, Any]]) -> str:
-        header = "| Verifier Model | Invariant Accuracy | Adversarial Recall | Latency (ms) | Cryptographic Audit |\n"
+        header = "| Verifier | Invariant Accuracy | Adversarial Recall | Latency (ms, measured) | Learned model |\n"
         divider = "| :--- | :---: | :---: | :---: | :---: |\n"
         rows = []
         for model, m in results.items():
-            bold = "**" if "Ours" in model else ""
-            audit_badge = "SHA-256 Chained" if m["tamper_proof"] else "None"
-            row = f"| {bold}{model}{bold} | {bold}{m['accuracy']}%{bold} | {bold}{m['adversarial_recall']}%{bold} | {m['latency_ms']} ms | {audit_badge} |"
+            bold = "**" if m["learned_model"] else ""
+            learned = "yes" if m["learned_model"] else "no"
+            row = f"| {bold}{model}{bold} | {bold}{m['accuracy']}%{bold} | {bold}{m['adversarial_recall']}%{bold} | {m['latency_ms']} | {learned} |"
             rows.append(row)
         return header + divider + "\n".join(rows)

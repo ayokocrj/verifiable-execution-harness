@@ -50,10 +50,17 @@ class SyntheticTraceGenerator:
     3. Enterprise Billing & Reconciliations (Invoicing, tax balancing, refund limits)
     """
 
+    # v0.1 is a pre-execution gatekeeper: ALLOW / BLOCK only. The ROLLBACK class
+    # (post-action state divergence) is only observable through signals that are not
+    # part of the (state, action, criteria) input, so including it would teach a
+    # shortcut on the action name. It is reserved for the v0.2 split.
+    V01_LABELS = ["ALLOW", "BLOCK"]
+    V02_LABELS = ["ALLOW", "BLOCK", "ROLLBACK"]
+
     def __init__(self, seed: int = 42):
         self.rng = random.Random(seed)
 
-    def generate_treasury_trace(self, is_adversarial: bool = False) -> TraceSample:
+    def generate_treasury_trace(self, is_adversarial: bool = False, include_rollback: bool = True) -> TraceSample:
         # Initial treasury accounts
         op_reserve = round(self.rng.uniform(3_000_000.0, 10_000_000.0), 2)
         payroll = round(self.rng.uniform(500_000.0, 2_000_000.0), 2)
@@ -80,7 +87,10 @@ class SyntheticTraceGenerator:
             )
         else:
             # Precision adversarial corruption
-            attack_type = self.rng.choice(["covenant_breach", "imbalanced_mutation", "negative_drain", "state_divergence"])
+            attack_types = ["covenant_breach", "imbalanced_mutation", "negative_drain"]
+            if include_rollback:
+                attack_types.append("state_divergence")
+            attack_type = self.rng.choice(attack_types)
 
             if attack_type == "covenant_breach":
                 # Drain reserve below $1M covenant
@@ -181,13 +191,22 @@ class SyntheticTraceGenerator:
                     breach_reason="OVERCURRENT-PROTECTION breached: current surge exceeds 800.0 A ceiling"
                 )
 
-    def generate_dataset(self, total_samples: int = 50_000, adversarial_ratio: float = 0.35) -> List[TraceSample]:
+    def generate_dataset(
+        self,
+        total_samples: int = 50_000,
+        adversarial_ratio: float = 0.35,
+        include_rollback: bool = False,
+    ) -> List[TraceSample]:
+        """
+        include_rollback=False (default) produces the v0.1 binary split (ALLOW / BLOCK).
+        include_rollback=True adds the post-action ROLLBACK class for the v0.2 split.
+        """
         samples: List[TraceSample] = []
         for _ in range(total_samples):
             is_adv = (self.rng.random() < adversarial_ratio)
             domain = self.rng.choice(["treasury", "treasury", "scada"]) # 66% treasury, 33% scada
             if domain == "treasury":
-                samples.append(self.generate_treasury_trace(is_adversarial=is_adv))
+                samples.append(self.generate_treasury_trace(is_adversarial=is_adv, include_rollback=include_rollback))
             else:
                 samples.append(self.generate_scada_trace(is_adversarial=is_adv))
         return samples

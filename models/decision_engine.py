@@ -30,6 +30,12 @@ class DecisionResult:
 
 class DecisionEngine:
     def __init__(self, config: LedgerInvariantConfig = None, model_path: str = None):
+        # Priority: explicit config > config.json saved next to the weights > 35m default.
+        if config is None and model_path:
+            import os
+            sibling = os.path.join(os.path.dirname(os.path.abspath(model_path)), "config.json")
+            if os.path.exists(sibling):
+                config = LedgerInvariantConfig.load(sibling)
         self.config = config or LedgerInvariantConfig.get_35m_config()
         self.tokenizer = InvariantTokenizer(vocab_size=self.config.vocab_size)
         self.model = None
